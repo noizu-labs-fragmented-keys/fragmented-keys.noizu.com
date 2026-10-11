@@ -19,7 +19,7 @@
 helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{ include "start-app.selectorLabels" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-app.kubernetes.io/managed-by: {{ .Chart.Service }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{- define "start-app.selectorLabels" -}}
