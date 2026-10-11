@@ -1,0 +1,16 @@
+apiVersion: v2
+name: fragmented-keys-site
+description: "Fragmented Keys — cache-invalidation library landing site (static nginx)"
+version: 0.1.0
+appVersion: "0.1.0"
+type: application
+keywords:
+  - fragmented-keys
+  - cache
+  - invalidation
+  - static-site
+maintainers:
+  - name: Keith Brings
+    email: keith.brings@noizu.com
+sources:
+  - https://github.com/noizu-labs/fragmented-keys

@@ -1,0 +1,28 @@
+replicas: 1
+
+domain: fragmented-keys.noizu.com
+frontend:
+  # Tag is bumped by CI (bump-chart job); never hand-edit.
+  image: ops.noizu.com/fragmented-keys.noizu.com/frontend:sha-0000000
+  port: 80
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+imagePullSecrets:
+  - name: ops-registry-secret
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+  cloudflareOnly: true
+tls:
+  enabled: true
+  # *.noizu.com wildcard cert (Cloudflare-synced, cluster-shared) — not a
+  # per-site Infisical cert, so this chart ships no tls-secret template.
+  secretName: cloudflare-tls-synced

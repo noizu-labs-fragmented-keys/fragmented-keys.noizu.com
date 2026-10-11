@@ -1,0 +1,79 @@
+name: CI
+
+# Pure nginx static site (no Node). PRs docker-build without push.
+# Push to `main` builds+pushes a sha-* image and bumps the chart so
+# ArgoCD can sync. Never run this bump by hand.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ops.noizu.com
+  IMAGE: ops.noizu.com/fragmented-keys.noizu.com/frontend
+
+jobs:
+  docker-build:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          tags: ${{ env.IMAGE }}:ci
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  build-push:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Short SHA
+        id: sha
+        run: echo "short=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - name: Build & push web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: ${{ env.IMAGE }}:sha-${{ steps.sha.outputs.short }}
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,scope=web,mode=max
+
+  bump-chart:
+    needs: build-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bump image tags
+        run: |
+          SHORT=${GITHUB_SHA::7}
+          sed -i -E "s|(image: ops\.noizu\.com/fragmented-keys\.noizu\.com/frontend:).*|\1sha-${SHORT}|" helm/fragmented-keys-site/values.yaml
+      - name: Commit & push
+        run: |
+          git config user.name "fragmented-keys-site-ci"
+          git config user.email "ci@noizu.com"
+          git add helm/fragmented-keys-site/values.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m "ci: deploy sha-${GITHUB_SHA::7} [skip ci]"
+          git pull --rebase origin ${{ github.ref_name }}
+          git push

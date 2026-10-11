@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://fragmented-keys.noizu.com/sitemap.xml

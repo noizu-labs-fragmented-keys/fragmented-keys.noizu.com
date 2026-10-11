@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fragmented Keys — tag-versioned composite cache keys</title>
+  <meta name="description" content="Fragmented Keys builds cache keys from independently versioned tags. Bump one tag's version and every dependent entry resolves to a new key — invalidation with no bulk deletes and no tombstones. Eight implementations: PHP, Python, Django, Swift, Java, Go, Elixir, TypeScript.">
+
+  <meta property="og:title" content="Fragmented Keys — tag-versioned composite cache keys">
+  <meta property="og:description" content="Bump a tag's version, every dependent cache entry resolves to a new key. Invalidation with no bulk deletes. Eight language implementations.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://fragmented-keys.noizu.com/">
+  <meta property="og:site_name" content="Fragmented Keys">
+  <meta property="og:locale" content="en_US">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230d1117'/%3E%3Crect x='6' y='9' width='4' height='14' rx='1' fill='%2358a6ff'/%3E%3Crect x='14' y='9' width='4' height='14' rx='1' fill='%23d29922'/%3E%3Crect x='22' y='9' width='4' height='14' rx='1' fill='%238b949e'/%3E%3Crect x='5' y='6' width='22' height='3' rx='1.5' fill='%23e6edf3'/%3E%3C/svg%3E">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #ffffff;
+      --bg-alt: #f6f8fa;
+      --text: #1f2328;
+      --text-muted: #59636e;
+      --accent: #0969da;
+      --border: #d1d9e0;
+      --code-bg: #f6f8fa;
+      --code-text: #24292f;
+      --ok: #1a7f37;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0d1117;
+        --bg-alt: #161b22;
+        --text: #e6edf3;
+        --text-muted: #9198a1;
+        --accent: #58a6ff;
+        --border: #3d444d;
+        --code-bg: #161b22;
+        --code-text: #e6edf3;
+        --ok: #3fb950;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 1rem;
+    }
+    .wrap { max-width: 46rem; margin: 0 auto; padding: 0 1.25rem; }
+    a { color: var(--accent); text-underline-offset: 2px; }
+    a:focus-visible, summary:focus-visible, button:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .skip-link {
+      position: absolute; left: -9999px; top: 0;
+      background: var(--bg-alt); color: var(--text);
+      padding: 0.5rem 1rem; z-index: 10; border: 1px solid var(--border);
+    }
+    .skip-link:focus { left: 0.5rem; top: 0.5rem; }
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px;
+      margin: -1px; padding: 0; overflow: hidden;
+      clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+    }
+    header.site {
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-alt);
+      padding: 1.75rem 0 1.5rem;
+    }
+    header.site h1 { margin: 0 0 0.25rem; font-size: 1.75rem; letter-spacing: -0.02em; }
+    header.site p { margin: 0 0 0.75rem; color: var(--text-muted); }
+    header.site nav { display: flex; flex-wrap: wrap; gap: 0.25rem 1.25rem; font-size: 0.95rem; }
+    main { padding: 1.5rem 0 2.5rem; }
+    section { margin: 2.25rem 0; }
+    section > h2 {
+      font-size: 1.3rem; margin: 0 0 0.75rem;
+      padding-bottom: 0.35rem; border-bottom: 1px solid var(--border);
+    }
+    section > h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
+    p { margin: 0 0 1rem; }
+    code, pre, kbd {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.9em;
+    }
+    code { background: var(--code-bg); border: 1px solid var(--border); border-radius: 4px; padding: 0.1em 0.35em; }
+    pre {
+      background: var(--code-bg); color: var(--code-text);
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 1rem 1.25rem; overflow-x: auto; line-height: 1.5;
+    }
+    pre code { background: none; border: none; padding: 0; font-size: 1em; }
+    table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; }
+    th, td { border: 1px solid var(--border); padding: 0.5rem 0.75rem; text-align: left; vertical-align: top; }
+    th { background: var(--bg-alt); }
+    .note {
+      border: 1px solid var(--border); border-left: 4px solid var(--ok);
+      background: var(--bg-alt); border-radius: 6px; padding: 0.75rem 1rem;
+    }
+    .note p:last-child { margin-bottom: 0; }
+    .formula { font-weight: 600; }
+    footer.site {
+      border-top: 1px solid var(--border); background: var(--bg-alt);
+      padding: 1.5rem 0 2rem; color: var(--text-muted); font-size: 0.9rem;
+    }
+    footer.site p { margin: 0 0 0.5rem; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site">
+    <div class="wrap">
+      <h1>Fragmented Keys</h1>
+      <p>Tag-versioned composite cache keys — invalidation without bulk deletes.</p>
+      <nav aria-label="Site">
+        <a href="#what">What it is</a>
+        <a href="#how">How keys are built</a>
+        <a href="#why">Why it matters</a>
+        <a href="#implementations">Implementations</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="#status">Status</a>
+        <a href="https://github.com/noizu-labs/fragmented-keys">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="wrap">
+
+    <section id="what">
+      <h2>What it is</h2>
+      <p>
+        Fragmented Keys is an open-source cache-invalidation library. A cache key is
+        composed from a key name, a group id, and an ordered set of independently
+        versioned &ldquo;tags&rdquo;; the composite key is the MD5 of that string. When any
+        tag&rsquo;s version is bumped, the composite hash changes, so every dependent cache
+        entry becomes unreachable instantly — with no bulk deletes and no tombstones.
+        Stale entries simply age out under their normal TTL.
+      </p>
+    </section>
+
+    <section id="how">
+      <h2>How keys are built</h2>
+      <p>The shared, language-agnostic construction rule from the <a href="https://github.com/noizu-labs/fragmented-keys/blob/main/spec/ALGORITHM.md">spec</a>:</p>
+      <pre aria-label="Composite key formula"><code>Key = MD5("KeyName_GroupID:tTag1:vVer1:tTag2:vVer2...")</code></pre>
+      <ul>
+        <li><code>KeyName</code> — the human-readable key name (e.g. <code>Dashboard</code>).</li>
+        <li><code>_</code> separates the key name from the group id; <code>:</code> separates every subsequent field.</li>
+        <li>Each tag contributes <code>t&lt;TagName&gt;</code> then <code>v&lt;Version&gt;</code>, in the order the tags were supplied — field order is significant.</li>
+        <li>Every tag carries an independently stored version counter; a fresh version is seeded from microtime on reset. <strong>Constant tags</strong> hold a fixed version and model dimensions that never change (site, environment).</li>
+      </ul>
+
+      <h3>Worked example</h3>
+      <p>A concrete rendering, taken from the Go implementation&rsquo;s test vectors
+        (global prefix <code>GNP</code>, tag <code>User</code> instance <code>42</code> at version
+        <code>1748000000000.0</code>, tag <code>City</code> instance <code>chicago</code> at version <code>5.0</code>):</p>
+      <pre aria-label="Worked example"><code>Key("Dashboard", [User:42, City:chicago])
+  -&gt; md5("Dashboard_:tUser_42GNP:v1748000000000.0:tCity_chicagoGNP:v5.0")
+  =  371011c8520b2129c3231b1396adab4d
+
+user.Increment(ctx)          # one write: version 1748000000000.0 -&gt; 1748000000000.1
+
+  -&gt; md5("Dashboard_:tUser_42GNP:v1748000000000.1:tCity_chicagoGNP:v5.0")
+  =  a different key          # guaranteed miss; the old entry is never deleted</code></pre>
+      <p>The entry built from the old hash is not deleted — it becomes unreachable and
+        expires under its own TTL. Note the <em>global prefix</em> appended to each tag name
+        (<code>User_42GNP</code>): the Python, Django and Go ports support an app-level
+        prefix so several applications can share one cache namespace.</p>
+    </section>
+
+    <section id="why">
+      <h2>Why it matters</h2>
+      <p>Classical cache invalidation makes you choose: delete entries one by one (and
+        track down every key you ever wrote), flush a whole namespace (and eat the
+        resulting database spike), or maintain tombstones. Fragmented Keys replaces all
+        three with <em>one integer write</em>:</p>
+      <ul>
+        <li><strong>No bulk deletes, no tombstones.</strong> Bumping a tag&rsquo;s version changes the composite hash, so every dependent entry resolves to a new key instantly; stale entries expire naturally under TTL.</li>
+        <li><strong>Tree-structured invalidation granularity.</strong> Invalidate everything tied to <code>User:42</code>, or everything tied to <code>Global.Greeting</code>, with the same single call — you choose the blast radius when you design your tags.</li>
+        <li><strong>Backend-agnostic.</strong> All storage sits behind a cache-handler abstraction with <code>get</code>, <code>set</code> and a bulk <code>get_multi</code>; reference handlers cover in-memory (dev/test) and Redis (bulk ops via MGET/MSET).</li>
+        <li><strong>Bulk-fetch optimization.</strong> Tags are grouped by handler so all version lookups needed to build one composite key resolve in a single round trip.</li>
+        <li><strong>KeyRing templates.</strong> Named key definitions binding an ordered tag list to handler configuration give you a factory/reuse layer on top of raw key construction.</li>
+      </ul>
+    </section>
+
+    <section id="implementations">
+      <h2>Implementations</h2>
+      <p>One spec, eight languages. Each implementation lives in its own upstream repo
+        and appears as a directory in the <a href="https://github.com/noizu-labs/fragmented-keys">composite repository</a>
+        (assembled with <code>git subtree</code>, so every variant keeps its own history behind its prefix).</p>
+      <table>
+        <caption class="visually-hidden">Fragmented Keys implementations by language, with upstream repo and composite directory</caption>
+        <thead>
+          <tr><th scope="col">Language</th><th scope="col">Upstream repo</th><th scope="col">In the composite</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>PHP</td><td><a href="https://github.com/noizu/fragmented-keys">noizu/fragmented-keys</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/php"><code>php/</code></a></td></tr>
+          <tr><td>Python</td><td><a href="https://github.com/noizu-labs/fragmented-keys-py">noizu-labs/fragmented-keys-py</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/python"><code>python/</code></a></td></tr>
+          <tr><td>Python (Django)</td><td><a href="https://github.com/noizu-labs-scaffolding/fragmented_keys_django">noizu-labs-scaffolding/fragmented_keys_django</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/python-django"><code>python-django/</code></a></td></tr>
+          <tr><td>Swift</td><td><a href="https://github.com/noizu-labs/SwiftFragmentedKeys">noizu-labs/SwiftFragmentedKeys</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/swift"><code>swift/</code></a></td></tr>
+          <tr><td>Java</td><td><a href="https://github.com/noizu-labs/fragmented-keys-4java">noizu-labs/fragmented-keys-4java</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/java"><code>java/</code></a></td></tr>
+          <tr><td>Go</td><td><a href="https://github.com/noizu-labs-scaffolding/fragmented-keys-go">noizu-labs-scaffolding/fragmented-keys-go</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/go"><code>go/</code></a></td></tr>
+          <tr><td>Elixir</td><td><a href="https://github.com/noizu-labs-scaffolding/fragmented-keys-ex">noizu-labs-scaffolding/fragmented-keys-ex</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/elixir"><code>elixir/</code></a></td></tr>
+          <tr><td>TypeScript (Node.js)</td><td><a href="https://github.com/noizu-labs-scaffolding/fragmented-keys-nodejs">noizu-labs-scaffolding/fragmented-keys-nodejs</a></td><td><a href="https://github.com/noizu-labs/fragmented-keys/tree/main/nodejs"><code>nodejs/</code></a></td></tr>
+        </tbody>
+      </table>
+      <p>Not every port produces byte-identical keys today: per the Go implementation&rsquo;s
+        compatibility notes, the PHP, Python, Elixir and TypeScript ports (and Go itself)
+        agree on MD5, the <code>:t</code>/<code>:v</code> separators, the <code>_</code> name
+        separator, float versions with a <code>+0.1</code> increment, and insertion-ordered
+        tags — while the Java and Swift ports sort tags rather than preserving insertion
+        order (and Swift skips hashing entirely). That divergence predates the Go port.</p>
+    </section>
+
+    <section id="quickstart">
+      <h2>Quickstart</h2>
+
+      <h3>Elixir</h3>
+      <pre aria-label="Elixir quickstart"><code># mix.exs
+def deps do
+  [
+    {:fragmented_keys, "~&gt; 0.1.0"}   # add :redix ("~&gt; 1.5") for the Redis handler
+  ]
+end</code></pre>
+      <pre aria-label="Elixir usage"><code>handler = FragmentedKeys.CacheHandler.Memory.new()
+FragmentedKeys.Configuration.set_default_cache_handler(handler)
+
+tag_user = FragmentedKeys.Tag.Standard.new("User", "42")
+tag_city = FragmentedKeys.Tag.Standard.new("City", "chicago")
+
+key = FragmentedKeys.Key.new("Dashboard", [tag_user, tag_city])
+key_str = FragmentedKeys.Key.get_key_str(key)   # =&gt; MD5 hex digest
+
+# Invalidate every key depending on User:42 — one write, no deletes
+FragmentedKeys.Tag.increment(tag_user)</code></pre>
+
+      <h3>Python</h3>
+      <pre aria-label="Python install"><code>pip install fragmented-keys   # or: uv add fragmented-keys</code></pre>
+      <pre aria-label="Python usage"><code>from redis import Redis
+from fragmented_keys import Configuration, RedisHandler, StandardTag, StandardKey
+
+client = Redis(host="127.0.0.1", port=6379)
+Configuration.set_default_cache_handler(RedisHandler(client))
+
+user_tag = StandardTag("User", "42")
+city_tag = StandardTag("City", "chicago")
+
+key = StandardKey("UserDashboard", [user_tag, city_tag])
+cache_key = key.get_key_str()          # MD5 hex digest
+
+data = client.get(cache_key)
+if data is None:
+    data = fetch_from_database()
+    client.set(cache_key, data)
+
+# Invalidate all keys depending on User:42
+user_tag.increment()</code></pre>
+
+      <h3>Go</h3>
+      <pre aria-label="Go install"><code>go get github.com/noizu-labs/fragmented-keys-go</code></pre>
+      <pre aria-label="Go usage"><code>import (
+    "github.com/noizu-labs/fragmented-keys-go/djangoredis"
+    "github.com/noizu-labs/fragmented-keys-go/fragkeys"
+    "github.com/redis/go-redis/v9"
+)
+
+rdb := redis.NewClient(&amp;redis.Options{Addr: "…:6379", DB: 1})
+h := djangoredis.New(rdb, djangoredis.WithCompression(true))
+fragkeys.Config.SetDefaultCacheHandler(h)
+
+tag := fragkeys.NewStandardTag("Page", "careers")
+doc, found, err := h.GetWithTags(ctx, "content_page", []fragkeys.Tag{tag})
+if err != nil || !found {
+    doc = compute()
+    _ = h.SetWithTags(ctx, "content_page", doc, []fragkeys.Tag{tag}, 10*time.Minute)
+}
+
+// Invalidate for both runtimes at once (shares a cache with Django).
+_ = h.InvalidateTags(ctx, []fragkeys.Tag{tag})</code></pre>
+    </section>
+
+    <section id="status">
+      <h2>Status</h2>
+      <div class="note">
+        <p><strong>Honest conformance status.</strong> Cross-language test vectors are not
+          yet promoted into the spec: each implementation is tested only in its own
+          language&rsquo;s harness, and no shared fixture set asserts that all eight ports
+          produce identical composite keys for identical inputs. The Go port does verify
+          against golden keys generated by <em>running</em> the Python port (raw string and
+          MD5), but <code>spec/</code> does not yet pin the MD5 hex casing or the exact
+          rendering of version integers inside the pre-hash string — so implementations
+          could diverge silently while each remaining self-consistent. Do not treat
+          cross-language key equality as guaranteed until a shared vector set lands in the
+          <a href="https://github.com/noizu-labs/fragmented-keys/tree/main/spec">spec</a>.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <p><strong>Fragmented Keys</strong> — <a href="https://github.com/noizu-labs/fragmented-keys">composite repository</a> ·
+        <a href="https://github.com/noizu-labs/fragmented-keys/blob/main/spec/ALGORITHM.md">spec/ALGORITHM.md</a> ·
+        <a href="https://github.com/noizu-labs/fragmented-keys/blob/main/spec/CONFORMANCE.md">spec/CONFORMANCE.md</a></p>
+      <p>Released under the MIT License. &copy; Noizu Labs, Inc.</p>
+    </div>
+  </footer>
+</body>
+</html>

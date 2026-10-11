@@ -1,0 +1,7 @@
+helm/
+Dockerfile
+.dockerignore
+.helmignore
+.git
+.gitignore
+*.md
