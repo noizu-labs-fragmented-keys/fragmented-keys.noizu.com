@@ -23,6 +23,11 @@ ingress:
   cloudflareOnly: true
 tls:
   enabled: true
-  # *.noizu.com wildcard cert (Cloudflare-synced, cluster-shared) — not a
-  # per-site Infisical cert, so this chart ships no tls-secret template.
-  secretName: cloudflare-tls-synced
+  # *.noizu.com wildcard: the CloudFlare Origin Certificate shared across the
+  # apps namespace (SANs *.noizu.com + noizu.com, valid to 2040). NOT
+  # `cloudflare-tls-synced` — that secret exists only in the `infra` namespace,
+  # and referencing it from `apps` leaves the ingress with no usable cert, so
+  # Cloudflare rejects the origin handshake with HTTP 526. Every working
+  # *.noizu.com site in `apps` (billing, infra-portal, meetme, noizu-site)
+  # uses this secret. No per-site Infisical cert, so no tls-secret template.
+  secretName: noizu-com-tls
