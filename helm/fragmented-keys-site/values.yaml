@@ -3,7 +3,7 @@ replicas: 1
 domain: fragmented-keys.noizu.com
 frontend:
   # Tag is bumped by CI (bump-chart job); never hand-edit.
-  image: ops.noizu.com/fragmented-keys.noizu.com/frontend:sha-0000000
+  image: ops.noizu.com/fragmented-keys.noizu.com/frontend:sha-e5a6dcc
   port: 80
   resources:
     requests:
