@@ -191,10 +191,6 @@
       box-shadow: 0 6px 20px rgba(210, 153, 34, 0.25);
     }
     .btn-primary:hover { filter: brightness(1.05); }
-    .btn-secondary {
-      border-color: var(--border-strong); color: var(--text); background: var(--surface);
-    }
-    .btn-secondary:hover { border-color: var(--gold-text); color: var(--gold-text); }
     .btn-compact { padding: 0.45rem 0.85rem; font-size: 0.85rem; border-radius: 9px; }
     .pill-row { display: flex; flex-wrap: wrap; gap: 0.55rem; justify-content: center; list-style: none; margin: 0; padding: 0; }
     .pill {
@@ -346,7 +342,7 @@
       .panel:hover { border-color: var(--border-strong); }
       .impl-card:hover { transform: translateY(-3px); border-color: var(--border-strong); box-shadow: var(--shadow); }
       .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(210, 153, 34, 0.35); }
-      .btn-secondary:hover, .icon-btn:hover { transform: translateY(-1px); }
+      .icon-btn:hover { transform: translateY(-1px); }
       .hero::before { animation: hero-drift 16s ease-in-out infinite alternate; }
       @keyframes hero-drift {
         from { transform: translateY(0); }
@@ -361,7 +357,7 @@
     @media (max-width: 640px) {
       .hero { padding: 3.25rem 0 2.5rem; }
       .head-inner { padding: 0.6rem 0; }
-      /* One tidy header row on small screens: brand + star/tip buttons only. */
+      /* One tidy header row on small screens: brand + star button only. */
       header.site nav { display: none; }
       .head-ctas { margin-left: auto; }
       /* Hero CTAs span the full column width. */
@@ -394,8 +390,6 @@
       </nav>
       <div class="head-ctas">
         <a class="icon-btn" href="https://github.com/noizu-labs/fragmented-keys" target="_blank" rel="noopener" aria-label="Star Fragmented Keys on GitHub"><span class="star" aria-hidden="true">★</span> Star</a>
-        <!-- TODO: replace with real Stripe Payment Link before release -->
-        <a class="icon-btn" href="https://buy.stripe.com/TODO-REPLACE-ME" target="_blank" rel="noopener" aria-label="Tip the team via Stripe"><span class="dia" aria-hidden="true">♡</span><span class="visually-hidden">Tip the team via Stripe</span></a>
       </div>
     </div>
   </header>
@@ -414,8 +408,6 @@
         </p>
         <div class="cta-row">
           <a class="btn btn-primary" href="https://github.com/noizu-labs/fragmented-keys" target="_blank" rel="noopener"><span aria-hidden="true">★</span> Star us on GitHub</a>
-          <!-- TODO: replace with real Stripe Payment Link before release -->
-          <a class="btn btn-secondary" href="https://buy.stripe.com/TODO-REPLACE-ME" target="_blank" rel="noopener" aria-label="Tip the team via Stripe"><span aria-hidden="true">♡</span> Tip the team</a>
         </div>
         <ul class="pill-row" aria-label="Language implementations">
           <li class="pill">PHP</li>
@@ -714,8 +706,6 @@ _ = h.InvalidateTags(ctx, []fragkeys.Tag{tag})</code></pre>
         <p class="foot-tag">One deterministic, tag-versioned key format for your entire stack.</p>
         <p class="foot-ctas">
           <a class="btn btn-primary btn-compact" href="https://github.com/noizu-labs/fragmented-keys" target="_blank" rel="noopener"><span aria-hidden="true">★</span> Star us on GitHub</a>
-          <!-- TODO: replace with real Stripe Payment Link before release -->
-          <a class="btn btn-secondary btn-compact" href="https://buy.stripe.com/TODO-REPLACE-ME" target="_blank" rel="noopener" aria-label="Tip the team via Stripe"><span aria-hidden="true">♡</span> Tip the team</a>
         </p>
       </div>
       <nav class="foot-links" aria-label="Project links">
