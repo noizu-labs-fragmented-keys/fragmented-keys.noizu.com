@@ -196,7 +196,7 @@
     }
     .btn-secondary:hover { border-color: var(--gold-text); color: var(--gold-text); }
     .btn-compact { padding: 0.45rem 0.85rem; font-size: 0.85rem; border-radius: 9px; }
-    .pill-row { display: flex; flex-wrap: wrap; gap: 0.55rem; justify-content: center; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 0.55rem; justify-content: center; list-style: none; margin: 0; padding: 0; }
     .pill {
       padding: 0.3rem 0.85rem; border: 1px solid var(--border);
       border-radius: 999px; background: var(--surface);
@@ -260,6 +260,19 @@
     .term pre {
       margin: 0; padding: 1.05rem 1.2rem; overflow-x: auto;
       line-height: 1.55; color: var(--term-text); font-size: 0.88rem;
+    }
+    .term pre::-webkit-scrollbar { height: 8px; }
+    .term pre::-webkit-scrollbar-track { background: transparent; }
+    .term pre::-webkit-scrollbar-thumb {
+      background: var(--border-strong); border-radius: 999px;
+    }
+    .term pre::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+    /* Firefox has no ::-webkit-scrollbar; thin colored bar there instead. */
+    @supports not selector(::-webkit-scrollbar) {
+      .term pre {
+        scrollbar-width: thin;
+        scrollbar-color: var(--border-strong) transparent;
+      }
     }
     .term pre code { display: block; background: none; border: none; padding: 0; font-size: 1em; color: inherit; }
 
@@ -348,7 +361,12 @@
     @media (max-width: 640px) {
       .hero { padding: 3.25rem 0 2.5rem; }
       .head-inner { padding: 0.6rem 0; }
-      header.site nav { font-size: 0.88rem; }
+      /* One tidy header row on small screens: brand + star/tip buttons only. */
+      header.site nav { display: none; }
+      .head-ctas { margin-left: auto; }
+      /* Hero CTAs span the full column width. */
+      .cta-row { flex-direction: column; align-items: stretch; }
+      .cta-row .btn { justify-content: center; }
     }
   </style>
 <!-- Google tag (gtag.js) -->
