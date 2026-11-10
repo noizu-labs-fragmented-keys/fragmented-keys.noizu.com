@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 2026-11-10
+- chore(seo): shareability images — head gains `og:image` (+1200x630 dimensions) + `twitter:image` at `https://fragmented-keys.noizu.com/og.jpg`, twitter:card upgraded summary → summary_large_image, NEW 1200x630 `og.jpg` at the static root (house dark-gradient card: Fragmented Keys + "composite cache keys for 8 languages"); other tag values unchanged — PR #14 → develop.
+
 ## 2026-10-28
 - docs: add AGENT-README.md (agent orientation)
 
